@@ -4,6 +4,7 @@ data/
 *.json
 !package.json
 !package-lock.json
+!railway.json
 clawbot-*
 login-clawbot.mjs
 .env
