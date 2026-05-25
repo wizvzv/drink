@@ -5,23 +5,27 @@ import {
   writeUserSettings,
 } from "../../../lib/multi-user-store";
 
-export async function GET() {
-  const mainUserId = getMainUserId();
-  if (!mainUserId) {
+function resolveUserId(request: NextRequest): string | null {
+  return request.nextUrl.searchParams.get("userId") || getMainUserId();
+}
+
+export async function GET(request: NextRequest) {
+  const userId = resolveUserId(request);
+  if (!userId) {
     return NextResponse.json(
       { success: false, error: "未设置主用户，请先扫码登录" },
       { status: 400 }
     );
   }
 
-  const settings = readUserSettings(mainUserId);
+  const settings = readUserSettings(userId);
   return NextResponse.json({ success: true, settings });
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const mainUserId = getMainUserId();
-    if (!mainUserId) {
+    const userId = resolveUserId(request);
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: "未设置主用户，请先扫码登录" },
         { status: 400 }
@@ -29,9 +33,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const current = readUserSettings(mainUserId);
+    const current = readUserSettings(userId);
     const updated = { ...current, ...body };
-    writeUserSettings(mainUserId, updated);
+    writeUserSettings(userId, updated);
     return NextResponse.json({ success: true, settings: updated });
   } catch (error) {
     return NextResponse.json(

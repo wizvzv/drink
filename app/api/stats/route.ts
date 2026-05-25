@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   getMainUserId,
   readUserSettings,
@@ -6,11 +6,19 @@ import {
   getUserConsecutiveDays,
 } from "../../../lib/multi-user-store";
 
-export async function GET() {
-  const mainUserId = getMainUserId();
+function resolveUserId(request: NextRequest): string | null {
+  // 优先使用查询参数 ?userId=
+  const urlUserId = request.nextUrl.searchParams.get("userId");
+  if (urlUserId) return urlUserId;
+  // 没有则回退到主用户
+  return getMainUserId();
+}
 
-  // 没有主用户时返回空数据
-  if (!mainUserId) {
+export async function GET(request: NextRequest) {
+  const userId = resolveUserId(request);
+
+  // 没有用户时返回空数据
+  if (!userId) {
     return NextResponse.json({
       success: true,
       stats: {
@@ -26,9 +34,9 @@ export async function GET() {
     });
   }
 
-  const settings = readUserSettings(mainUserId);
-  const todayRecord = getUserTodayRecord(mainUserId);
-  const consecutiveDays = getUserConsecutiveDays(mainUserId);
+  const settings = readUserSettings(userId);
+  const todayRecord = getUserTodayRecord(userId);
+  const consecutiveDays = getUserConsecutiveDays(userId);
 
   const now = new Date();
   const currentHour = now.getHours();

@@ -1,18 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getMainUserId } from "../../../lib/multi-user-store";
 import { sendReminderToUser } from "../../../lib/multi-user-webhook";
 
-// 冷却期：统一 3 分钟内只能发一次（微信 API 限频较严）
+// 冷却期：每用户 3 分钟内只能发一次（微信 API 限频较严）
 const cooldowns: Record<string, number> = {};
 const COOLDOWN_MS = 180_000;
-const COOLDOWN_KEY = "global"; // 没主用户时用全局冷却
 
-function getCooldownKey(): string {
-  return getMainUserId() || COOLDOWN_KEY;
+function resolveUserId(request: NextRequest): string {
+  return request.nextUrl.searchParams.get("userId") || getMainUserId() || "_env_";
 }
 
-export async function GET() {
-  const key = getCooldownKey();
+export async function GET(request: NextRequest) {
+  const userId = resolveUserId(request);
+  const key = userId;
 
   // 冷却检查
   const now = Date.now();
@@ -26,9 +26,7 @@ export async function GET() {
   }
   cooldowns[key] = now;
 
-  // 有主用户 → 用他的凭证发送；没有 → 走环境变量回退
-  const mainUserId = getMainUserId();
-  const result = await sendReminderToUser(mainUserId || "_env_");
+  const result = await sendReminderToUser(userId);
 
   // 发送失败则释放冷却
   if (!result.success) {

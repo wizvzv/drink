@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+interface User {
+  userId: string;
+  name: string;
+}
+
 interface Stats {
   today: { cups: number; totalMl: number; logs: { time: string; ml: number }[] };
   consecutiveDays: number;
@@ -20,7 +25,11 @@ interface Settings {
   cupVolumeMl: number;
 }
 
+const STORAGE_KEY = "drink_selected_userId";
+
 export default function DrinkPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
@@ -39,9 +48,29 @@ export default function DrinkPage() {
     setTimeout(() => setToast(""), 2000);
   };
 
-  const fetchStats = useCallback(async () => {
+  // 加载用户列表，恢复上次选择的用户
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/users");
+        const data = await res.json();
+        if (data.success && data.users.length > 0) {
+          setUsers(data.users);
+          const saved = localStorage.getItem(STORAGE_KEY);
+          const exist = saved && data.users.some((u: User) => u.userId === saved);
+          const initial = exist ? saved : data.users[0].userId;
+          setSelectedUserId(initial);
+        }
+      } catch {
+        // 忽略
+      }
+    })();
+  }, []);
+
+  const fetchStats = useCallback(async (userId: string) => {
+    if (!userId) return;
     try {
-      const res = await fetch("/api/stats");
+      const res = await fetch(`/api/stats?userId=${encodeURIComponent(userId)}`);
       const data = await res.json();
       if (data.success) {
         setStats(data.stats);
@@ -59,17 +88,33 @@ export default function DrinkPage() {
     }
   }, []);
 
+  // selectedUserId 变化时重新加载数据
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    if (selectedUserId) {
+      setLoading(true);
+      fetchStats(selectedUserId);
+    }
+  }, [selectedUserId, fetchStats]);
+
+  const switchUser = (userId: string) => {
+    setSelectedUserId(userId);
+    localStorage.setItem(STORAGE_KEY, userId);
+  };
+
+  const currentUser = users.find((u) => u.userId === selectedUserId);
 
   const handleDrink = async () => {
+    if (!selectedUserId) return;
     try {
-      const res = await fetch("/api/record", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const res = await fetch("/api/record", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selectedUserId }),
+      });
       const data = await res.json();
       if (data.success) {
         showToast("已记录一杯 🥤");
-        fetchStats();
+        fetchStats(selectedUserId);
       }
     } catch {
       showToast("记录失败");
@@ -77,12 +122,13 @@ export default function DrinkPage() {
   };
 
   const handleToggle = async () => {
+    if (!selectedUserId) return;
     try {
-      const res = await fetch("/api/toggle", { method: "POST" });
+      const res = await fetch(`/api/toggle?userId=${encodeURIComponent(selectedUserId)}`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
         showToast(data.enabled ? "提醒已开启 🔔" : "提醒已关闭 🔕");
-        fetchStats();
+        fetchStats(selectedUserId);
       }
     } catch {
       showToast("操作失败");
@@ -90,9 +136,10 @@ export default function DrinkPage() {
   };
 
   const handleSaveSettings = async () => {
+    if (!selectedUserId) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/settings", {
+      const res = await fetch(`/api/settings?userId=${encodeURIComponent(selectedUserId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settingsForm),
@@ -101,7 +148,7 @@ export default function DrinkPage() {
       if (data.success) {
         showToast("设置已保存 ✅");
         setShowSettings(false);
-        fetchStats();
+        fetchStats(selectedUserId);
       }
     } catch {
       showToast("保存失败");
@@ -111,9 +158,10 @@ export default function DrinkPage() {
   };
 
   const handleTestReminder = async () => {
+    if (!selectedUserId) return;
     setSendingTest(true);
     try {
-      const res = await fetch("/api/test-reminder");
+      const res = await fetch(`/api/test-reminder?userId=${encodeURIComponent(selectedUserId)}`);
       const data = await res.json();
       if (data.success) {
         showToast("测试提醒已发送 ✅");
@@ -127,7 +175,7 @@ export default function DrinkPage() {
     }
   };
 
-  if (loading) {
+  if (loading && !stats) {
     return (
       <div className="flex items-center justify-center min-h-dvh">
         <div className="text-blue-500 text-lg animate-pulse">加载中...</div>
@@ -139,6 +187,8 @@ export default function DrinkPage() {
   const totalMl = stats?.today.totalMl ?? 0;
   const targetMl = stats ? stats.dailyGoalCups * stats.cupVolumeMl : 2000;
 
+  const selectedName = currentUser?.name || "选择账号";
+
   return (
     <div className="max-w-md mx-auto px-4 pb-8 pt-6 min-h-dvh flex flex-col">
       {toast && (
@@ -147,25 +197,47 @@ export default function DrinkPage() {
         </div>
       )}
 
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">喝水助手</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {stats?.consecutiveDays ? `已坚持 ${stats.consecutiveDays} 天 🔥` : "今天开始喝水吧 💪"}
-          </p>
-        </div>
-        <button
-          onClick={handleToggle}
-          className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
-            stats?.enabled ? "bg-blue-500" : "bg-gray-300"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${
-              stats?.enabled ? "translate-x-7" : "translate-x-0"
+      <header className="mb-6">
+        {/* 用户选择器 */}
+        {users.length > 1 && (
+          <div className="mb-3 flex items-center gap-2 overflow-x-auto">
+            {users.map((user) => (
+              <button
+                key={user.userId}
+                onClick={() => switchUser(user.userId)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  user.userId === selectedUserId
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {user.name}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {currentUser ? `${currentUser.name} 的水杯` : "喝水助手"}
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {stats?.consecutiveDays ? `已坚持 ${stats.consecutiveDays} 天 🔥` : "今天开始喝水吧 💪"}
+            </p>
+          </div>
+          <button
+            onClick={handleToggle}
+            className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
+              stats?.enabled ? "bg-blue-500" : "bg-gray-300"
             }`}
-          />
-        </button>
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${
+                stats?.enabled ? "translate-x-7" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
       </header>
 
       <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 mb-4">

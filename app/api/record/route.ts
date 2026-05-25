@@ -7,17 +7,18 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const mainUserId = getMainUserId();
-    if (!mainUserId) {
+    const body = await request.json();
+    const userId = body.userId || getMainUserId();
+
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: "未设置主用户，请先扫码登录" },
         { status: 400 }
       );
     }
 
-    const body = await request.json();
-    const ml = body.ml || readUserSettings(mainUserId).cupVolumeMl;
-    const record = addUserDrinkRecord(mainUserId, ml);
+    const ml = body.ml || readUserSettings(userId).cupVolumeMl;
+    const record = addUserDrinkRecord(userId, ml);
     return NextResponse.json({ success: true, record });
   } catch (error) {
     return NextResponse.json(
