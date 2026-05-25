@@ -36,15 +36,24 @@ export default function Home() {
         </div>
       </div>
 
-      <Link
-        href="/drink"
-        className="block w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-lg font-semibold text-center rounded-2xl shadow-lg shadow-blue-200 active:scale-[0.97] transition-transform"
-      >
-        开始使用 →
-      </Link>
+      <div className="grid gap-3 mb-8">
+        <Link
+          href="/drink"
+          className="block w-full py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-lg font-semibold text-center rounded-2xl shadow-lg shadow-blue-200 active:scale-[0.97] transition-transform"
+        >
+          开始使用 →
+        </Link>
+
+        <Link
+          href="/login"
+          className="block w-full py-3 bg-white text-blue-500 font-semibold text-center rounded-2xl border-2 border-blue-200 active:scale-[0.97] transition-transform hover:bg-blue-50"
+        >
+          🔑 ClawBot 扫码登录
+        </Link>
+      </div>
 
       <div className="mt-auto text-center text-xs text-gray-400 pt-8">
-        需要自行配置企业微信群机器人 Webhook
+        首次使用请先扫码登录绑定企业微信机器人
       </div>
     </div>
   );
