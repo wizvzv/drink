@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
     // 第一个登录的用户自动设为主控制人
     if (!getMainUserId()) {
       setMainUserId(userId);
+      console.log(`[auth/save] 设置主用户: userId=${userId}, toUser=${toUser}`);
     }
+    
+    console.log(`[auth/save] 凭证已保存: userId=${userId}, hasToken=${!!token}`);
     
     return NextResponse.json({
       success: true,

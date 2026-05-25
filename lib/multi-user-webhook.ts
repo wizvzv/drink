@@ -63,7 +63,10 @@ export async function sendReminderToUser(userId: string): Promise<SendResult> {
     toUser = credentials.WXCLAW_TO_USER;
   }
 
+  console.log(`[sendReminder] userId=${userId}, hasToken=${!!token}, toUser=${toUser}, source=${credentials ? "user-credentials" : "env-vars"}`);
+
   if (!token) {
+    console.error(`[sendReminder] 无凭证: userId=${userId}`);
     return { success: false, error: "未配置 ClawBot 凭证，请在 Railway 设置 WXCLAW_TOKEN 环境变量或扫码登录" };
   }
 
@@ -108,11 +111,14 @@ ${message}
 
   try {
     const result = await c.sendText(toUser, text);
+    console.log(`[sendReminder] 发送结果: ok=${result.ok}, error=${result.error || "无"}`);
     if (result.ok) {
       return { success: true };
     }
     return { success: false, error: result.error || "发送失败" };
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : String(error) };
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[sendReminder] 发送异常: ${msg}`);
+    return { success: false, error: msg };
   }
 }
