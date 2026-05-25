@@ -51,19 +51,21 @@ export async function sendReminderToUser(userId: string): Promise<SendResult> {
     return { success: false, error: "发送太频繁，请稍后再试 (ret=-2)" };
   }
 
-  // 优先使用用户凭证，没有则回退到环境变量
+  // 优先使用 Railway 环境变量（可配置已验证的 token，不依赖本地）
+  // 没有环境变量时回退到扫码登录的凭证
   let token = process.env.WXCLAW_TOKEN || "";
   let baseUrl = process.env.WXCLAW_BASE_URL || "https://ilinkai.weixin.qq.com";
   let toUser = process.env.WXCLAW_TO_USER || "";
 
   const credentials = readUserCredentials(userId);
-  if (credentials) {
+  if (!token && credentials) {
     token = credentials.WXCLAW_TOKEN;
     baseUrl = credentials.WXCLAW_BASE_URL;
     toUser = credentials.WXCLAW_TO_USER;
   }
 
-  console.log(`[sendReminder] userId=${userId}, hasToken=${!!token}, toUser=${toUser}, source=${credentials ? "user-credentials" : "env-vars"}`);
+  const source = process.env.WXCLAW_TOKEN && token === process.env.WXCLAW_TOKEN ? "env-vars" : "user-credentials";
+  console.log(`[sendReminder] userId=${userId}, hasToken=${!!token}, toUser=${toUser}, source=${source}`);
 
   if (!token) {
     console.error(`[sendReminder] 无凭证: userId=${userId}`);
