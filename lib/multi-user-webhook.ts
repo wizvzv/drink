@@ -15,6 +15,18 @@ export interface SendResult {
 
 const clientsCache: Record<string, WxClawClient> = {};
 
+// 全局发送冷却：同一用户 30 秒内只发一次（防止调度器 + 手动测试冲突）
+const sendCooldowns: Record<string, number> = {};
+const SEND_COOLDOWN_MS = 30_000;
+
+function isRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const last = sendCooldowns[userId] ?? 0;
+  if (now - last < SEND_COOLDOWN_MS) return true;
+  sendCooldowns[userId] = now;
+  return false;
+}
+
 function getClient(userId: string): WxClawClient | null {
   if (clientsCache[userId]) return clientsCache[userId];
 
@@ -34,6 +46,11 @@ function getClient(userId: string): WxClawClient | null {
 }
 
 export async function sendReminderToUser(userId: string): Promise<SendResult> {
+  // 限频保护
+  if (isRateLimited(userId)) {
+    return { success: false, error: "发送太频繁，请稍后再试 (ret=-2)" };
+  }
+
   const c = getClient(userId);
   if (!c) {
     return { success: false, error: "用户凭证未设置" };
