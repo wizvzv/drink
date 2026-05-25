@@ -1,9 +1,10 @@
 import { WxClawClient } from "@claw-lab/wxclawbot-cli";
-import { resolveAccount } from "@claw-lab/wxclawbot-cli/accounts";
 import { getRandomMessage } from "./messages";
 import { readSettings, getTodayRecord, getConsecutiveDays, getTodayStr } from "./store";
 
 const TO_USER = process.env.WXCLAW_TO_USER || "";
+const TOKEN = process.env.WXCLAW_TOKEN || "";
+const BASE_URL = process.env.WXCLAW_BASE_URL || "https://ilinkai.weixin.qq.com";
 
 export interface SendResult {
   success: boolean;
@@ -15,13 +16,14 @@ let client: WxClawClient | null = null;
 function getClient(): WxClawClient | null {
   if (client) return client;
 
-  const account = resolveAccount();
-  if (!account) return null;
+  if (!TOKEN) return null;
 
+  const botId = TOKEN.split("@")[0];
+  
   client = new WxClawClient({
-    baseUrl: account.baseUrl,
-    token: account.token,
-    botId: account.botId,
+    baseUrl: BASE_URL,
+    token: TOKEN,
+    botId: botId,
   });
 
   return client;
@@ -30,7 +32,7 @@ function getClient(): WxClawClient | null {
 export async function sendReminder(): Promise<SendResult> {
   const c = getClient();
   if (!c) {
-    return { success: false, error: "WXCLAW_TOKEN 未设置，请先配置 ClawBot 环境变量" };
+    return { success: false, error: "WXCLAW_TOKEN 未设置，请检查 Railway 环境变量配置" };
   }
 
   if (!TO_USER) {
