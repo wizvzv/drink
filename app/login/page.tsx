@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [message, setMessage] = useState("等待扫码...");
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<string>("");
   const [userName, setUserName] = useState("");
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -28,14 +27,11 @@ export default function LoginPage() {
       const data = await res.json();
       if (data.success) {
         setUsers(data.users);
-        if (data.users.length > 0 && !selectedUser) {
-          setSelectedUser(data.users[0].userId);
-        }
       }
     } catch {
       // 忽略错误
     }
-  }, [selectedUser]);
+  }, []);
 
   const fetchQrcode = useCallback(async () => {
     try {
@@ -161,41 +157,31 @@ export default function LoginPage() {
 
       {users.length > 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 mb-6">
-          <h2 className="text-sm font-medium text-gray-600 mb-4">选择登录账号</h2>
-          <div className="space-y-3 mb-4">
-            {users.map((user) => (
-              <button
-                key={user.userId}
-                onClick={() => setSelectedUser(user.userId)}
-                className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                  selectedUser === user.userId
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-800">{user.name}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      上次登录：{new Date(user.lastLoginAt).toLocaleString("zh-CN")}
-                    </div>
-                  </div>
-                  {selectedUser === user.userId && (
-                    <span className="text-blue-500 text-lg">✓</span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-          <div className="border-t border-gray-100 pt-4">
-            <label className="text-xs text-gray-500 block mb-2">或输入新用户名创建新账号</label>
+          {users.length > 0 && (
+            <div className="mb-4">
+              <h2 className="text-sm font-medium text-gray-600 mb-3">已登录用户</h2>
+              <div className="flex flex-wrap gap-2">
+                {users.map((user) => (
+                  <span
+                    key={user.userId}
+                    className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs px-3 py-1.5 rounded-full"
+                  >
+                    {user.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className={users.length > 0 ? "border-t border-gray-100 pt-4" : ""}>
+            <h2 className="text-sm font-medium text-gray-600 mb-3">添加新用户</h2>
             <input
               type="text"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              placeholder="输入用户名（可选）"
+              placeholder="输入新用户名称（可选）"
               className="w-full px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm"
             />
+            <p className="text-xs text-gray-400 mt-2">填写名称后，让新用户用微信扫描下方二维码即可添加</p>
           </div>
         </div>
       )}
