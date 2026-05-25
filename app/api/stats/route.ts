@@ -4,6 +4,8 @@ import {
   readUserSettings,
   getUserTodayRecord,
   getUserConsecutiveDays,
+  getChinaHour,
+  getChinaMinute,
 } from "../../../lib/multi-user-store";
 
 function resolveUserId(request: NextRequest): string | null {
@@ -38,9 +40,8 @@ export async function GET(request: NextRequest) {
   const todayRecord = getUserTodayRecord(userId);
   const consecutiveDays = getUserConsecutiveDays(userId);
 
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  const currentHour = getChinaHour();
+  const currentMinute = getChinaMinute();
 
   let nextReminder: string | null = null;
   if (settings.enabled) {

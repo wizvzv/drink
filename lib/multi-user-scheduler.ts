@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { getAllUsers, readUserSettings } from "./multi-user-store";
+import { getAllUsers, readUserSettings, getChinaDate, getChinaHour, getChinaMinute } from "./multi-user-store";
 import { sendReminderToUser } from "./multi-user-webhook";
 
 let task: cron.ScheduledTask | null = null;
@@ -25,20 +25,20 @@ async function sendToUser(user: { userId: string; name: string }): Promise<boole
     return false;
   }
 
-  const now = new Date();
-  const currentHour = now.getHours();
+  const currentHour = getChinaHour();
   if (currentHour < settings.startHour || currentHour >= settings.endHour) {
     return false;
   }
 
-  console.log(`[${now.toISOString()}] 发送喝水提醒给 [用户 ${user.name}]...`);
+  const ts = getChinaDate().toISOString();
+  console.log(`[${ts}] 发送喝水提醒给 [用户 ${user.name}]...`);
   const result = await sendReminderToUser(userId);
   if (result.success) {
-    console.log(`[${now.toISOString()}] [用户 ${user.name}] 提醒发送成功`);
+    console.log(`[${ts}] [用户 ${user.name}] 提醒发送成功`);
     return true;
   }
 
-  console.error(`[${now.toISOString()}] [用户 ${user.name}] 发送失败:`, result.error);
+  console.error(`[${ts}] [用户 ${user.name}] 发送失败:`, result.error);
   return false;
 }
 
@@ -48,15 +48,14 @@ export function startMultiUserScheduler(): void {
   }
 
   task = cron.schedule("* * * * *", async () => {
-    const now = new Date();
-    const currentMinute = now.getMinutes();
+    const currentMinute = getChinaMinute();
 
     // —— 整点发送 ——
     if (currentMinute === 0) {
       const users = getAllUsers();
       for (const user of users) {
         const userId = user.userId;
-        const currentHour = now.getHours();
+        const currentHour = getChinaHour();
 
         // 检查本小时是否已发过
         const lastSentHour = lastSentHours[userId] ?? -1;

@@ -190,8 +190,25 @@ export function writeUserRecords(userId: string, records: Records): void {
   fs.writeFileSync(recordsPath, JSON.stringify(records, null, 2), "utf-8");
 }
 
-export function getTodayStr(): string {
+/** 获取中国时区 (UTC+8) 的当前时间 */
+export function getChinaDate(): Date {
   const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60_000;
+  return new Date(utcMs + 8 * 3_600_000);
+}
+
+/** 获取中国时区的当前小时 (0-23) */
+export function getChinaHour(): number {
+  return getChinaDate().getHours();
+}
+
+/** 获取中国时区的当前分钟 (0-59) */
+export function getChinaMinute(): number {
+  return getChinaDate().getMinutes();
+}
+
+export function getTodayStr(): string {
+  const now = getChinaDate();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
@@ -201,7 +218,7 @@ export function getTodayStr(): string {
 export function addUserDrinkRecord(userId: string, ml: number): DayRecord {
   const records = readUserRecords(userId);
   const today = getTodayStr();
-  const now = new Date();
+  const now = getChinaDate();
   const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
   const dayRecord: DayRecord = records[today] || { cups: 0, totalMl: 0, logs: [] };
@@ -222,7 +239,7 @@ export function getUserTodayRecord(userId: string): DayRecord | null {
 
 export function getUserConsecutiveDays(userId: string): number {
   const records = readUserRecords(userId);
-  const today = new Date();
+  const today = getChinaDate();
   let count = 0;
 
   for (let i = 0; i < 365; i++) {
