@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { getMainUserId } from "../../../lib/multi-user-store";
 import { sendReminderToUser } from "../../../lib/multi-user-webhook";
 
-// 冷却期：统一 60 秒内只能发一次
+// 冷却期：统一 3 分钟内只能发一次（微信 API 限频较严）
 const cooldowns: Record<string, number> = {};
-const COOLDOWN_MS = 60_000;
+const COOLDOWN_MS = 180_000;
 const COOLDOWN_KEY = "global"; // 没主用户时用全局冷却
 
 function getCooldownKey(): string {

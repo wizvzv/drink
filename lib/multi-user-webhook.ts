@@ -15,9 +15,9 @@ export interface SendResult {
 
 const clientsCache: Record<string, WxClawClient> = {};
 
-// 全局发送冷却：同一用户 30 秒内只发一次（防止调度器 + 手动测试冲突）
+// 全局发送冷却：同一用户 2 分钟内只发一次（微信 API 限频较严）
 const sendCooldowns: Record<string, number> = {};
-const SEND_COOLDOWN_MS = 30_000;
+const SEND_COOLDOWN_MS = 120_000;
 
 function isRateLimited(userId: string): boolean {
   const now = Date.now();
