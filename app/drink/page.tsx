@@ -31,6 +31,7 @@ export default function DrinkPage() {
     cupVolumeMl: 250,
   });
   const [saving, setSaving] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
   const [toast, setToast] = useState("");
 
   const showToast = (msg: string) => {
@@ -109,6 +110,23 @@ export default function DrinkPage() {
     }
   };
 
+  const handleTestReminder = async () => {
+    setSendingTest(true);
+    try {
+      const res = await fetch("/api/test-reminder");
+      const data = await res.json();
+      if (data.success) {
+        showToast("测试提醒已发送 ✅");
+      } else {
+        showToast(data.error || "发送失败");
+      }
+    } catch {
+      showToast("发送失败，请检查网络");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-dvh">
@@ -175,6 +193,14 @@ export default function DrinkPage() {
         className="w-full py-5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xl font-semibold rounded-2xl shadow-lg shadow-blue-200 active:scale-[0.97] transition-transform mb-4"
       >
         🥤 喝了一杯
+      </button>
+
+      <button
+        onClick={handleTestReminder}
+        disabled={sendingTest}
+        className="w-full py-3 bg-white text-blue-500 font-medium rounded-2xl border-2 border-blue-200 active:scale-[0.97] transition-transform mb-4 disabled:opacity-50 hover:bg-blue-50"
+      >
+        {sendingTest ? "发送中..." : "📤 发送测试提醒"}
       </button>
 
       <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-5 mb-4">
