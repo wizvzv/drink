@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { readSettings, writeSettings } from "@/lib/store";
-import { resetLastSentHour } from "@/lib/scheduler";
+import { readSettings, writeSettings } from "../../lib/store";
+import { resetLastSentHour } from "../../lib/scheduler";
 
 export async function POST() {
   const settings = readSettings();
