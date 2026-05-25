@@ -6,8 +6,8 @@
   },
   "deploy": {
     "startCommand": "npm run start",
-    "healthcheckPath": "/",
-    "healthcheckTimeout": 60,
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 30,
     "restartPolicyType": "ALWAYS",
     "volumes": [
       {
