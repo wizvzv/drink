@@ -3,6 +3,7 @@ import path from "path";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const USERS_INDEX_PATH = path.join(DATA_DIR, "users-index.json");
+const MAIN_USER_PATH = path.join(DATA_DIR, "main-user.json");
 
 export interface UserInfo {
   userId: string;
@@ -79,6 +80,21 @@ export function getAllUsers(): UserInfo[] {
 export function getUserInfo(userId: string): UserInfo | null {
   const index = readUsersIndex();
   return index[userId] || null;
+}
+
+export function getMainUserId(): string | null {
+  ensureDataDir();
+  try {
+    const raw = fs.readFileSync(MAIN_USER_PATH, "utf-8");
+    return JSON.parse(raw).mainUserId || null;
+  } catch {
+    return null;
+  }
+}
+
+export function setMainUserId(userId: string): void {
+  ensureDataDir();
+  fs.writeFileSync(MAIN_USER_PATH, JSON.stringify({ mainUserId: userId }), "utf-8");
 }
 
 export function deleteUser(userId: string): boolean {

@@ -1,9 +1,17 @@
 import Link from "next/link";
-import { getAllUsers } from "../lib/multi-user-store";
+import {
+  getAllUsers,
+  getMainUserId,
+  getUserInfo,
+  readUserSettings,
+} from "../lib/multi-user-store";
 
 export default function Home() {
   const users = getAllUsers();
   const userCount = users.length;
+  const mainUserId = getMainUserId();
+  const mainUser = mainUserId ? getUserInfo(mainUserId) : null;
+  const mainSettings = mainUserId ? readUserSettings(mainUserId) : null;
 
   return (
     <div className="max-w-md mx-auto px-4 pt-16 pb-8 min-h-dvh flex flex-col">
@@ -14,12 +22,26 @@ export default function Home() {
           定时通过企业微信提醒你喝水<br />
           养成健康饮水习惯
         </p>
-        {userCount > 0 && (
+        {mainUser ? (
+          <div className="mt-3 flex flex-col items-center gap-1">
+            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-xs px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+              <span>主用户：{mainUser.name} · 共 {userCount} 个账号</span>
+            </div>
+            {mainSettings && (
+              <div className="text-xs text-gray-400">
+                🔔 {mainSettings.enabled ? "提醒已开启" : "提醒已关闭"}
+                {" · "}
+                {mainSettings.startHour}:00 ~ {mainSettings.endHour}:00
+              </div>
+            )}
+          </div>
+        ) : userCount > 0 ? (
           <div className="mt-3 inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-xs px-3 py-1.5 rounded-full">
             <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
             <span>已登录 {userCount} 个账号</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="grid gap-3 mb-8">
@@ -65,7 +87,9 @@ export default function Home() {
       <div className="mt-auto text-center text-xs text-gray-400 pt-8">
         {userCount === 0 
           ? "首次使用请先扫码登录绑定企业微信机器人"
-          : `当前有 ${userCount} 个账号在接收提醒，每个账号独立管理`}
+          : mainUser
+            ? `主控制人：${mainUser.name} · 共 ${userCount} 个账号接收提醒`
+            : `当前有 ${userCount} 个账号在接收提醒，可扫码登录设为主用户`}
       </div>
     </div>
   );

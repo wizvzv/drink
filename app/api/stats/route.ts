@@ -1,10 +1,34 @@
 import { NextResponse } from "next/server";
-import { readSettings, getTodayRecord, getConsecutiveDays } from "../../../lib/store";
+import {
+  getMainUserId,
+  readUserSettings,
+  getUserTodayRecord,
+  getUserConsecutiveDays,
+} from "../../../lib/multi-user-store";
 
 export async function GET() {
-  const settings = readSettings();
-  const todayRecord = getTodayRecord();
-  const consecutiveDays = getConsecutiveDays();
+  const mainUserId = getMainUserId();
+
+  // 没有主用户时返回空数据
+  if (!mainUserId) {
+    return NextResponse.json({
+      success: true,
+      stats: {
+        today: { cups: 0, totalMl: 0, logs: [] },
+        consecutiveDays: 0,
+        enabled: false,
+        dailyGoalCups: 8,
+        cupVolumeMl: 250,
+        startHour: 8,
+        endHour: 22,
+        nextReminder: null,
+      },
+    });
+  }
+
+  const settings = readUserSettings(mainUserId);
+  const todayRecord = getUserTodayRecord(mainUserId);
+  const consecutiveDays = getUserConsecutiveDays(mainUserId);
 
   const now = new Date();
   const currentHour = now.getHours();

@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
-import { readSettings, writeSettings } from "../../../lib/store";
-import { resetLastSentHour } from "../../../lib/scheduler";
+import {
+  getMainUserId,
+  readUserSettings,
+  writeUserSettings,
+} from "../../../lib/multi-user-store";
+import { resetUserLastSentHour } from "../../../lib/multi-user-scheduler";
 
 export async function POST() {
-  const settings = readSettings();
+  const mainUserId = getMainUserId();
+  if (!mainUserId) {
+    return NextResponse.json(
+      { success: false, error: "未设置主用户，请先扫码登录" },
+      { status: 400 }
+    );
+  }
+
+  const settings = readUserSettings(mainUserId);
   settings.enabled = !settings.enabled;
-  writeSettings(settings);
-  resetLastSentHour();
+  writeUserSettings(mainUserId, settings);
+  resetUserLastSentHour(mainUserId);
   return NextResponse.json({ success: true, enabled: settings.enabled });
 }

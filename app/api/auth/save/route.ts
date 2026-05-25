@@ -3,6 +3,8 @@ import {
   addOrUpdateUser,
   writeUserCredentials,
   writeUserSettings,
+  getMainUserId,
+  setMainUserId,
 } from "../../../../lib/multi-user-store";
 
 export async function POST(request: NextRequest) {
@@ -37,6 +39,11 @@ export async function POST(request: NextRequest) {
       dailyGoalCups: 8,
       cupVolumeMl: 250,
     });
+    
+    // 第一个登录的用户自动设为主控制人
+    if (!getMainUserId()) {
+      setMainUserId(userId);
+    }
     
     return NextResponse.json({
       success: true,
