@@ -1,0 +1,10 @@
+node_modules/
+.next/
+data/
+*.json
+!package.json
+!package-lock.json
+clawbot-*
+login-clawbot.mjs
+.env
+.env.local
