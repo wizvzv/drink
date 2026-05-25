@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeSettings } from "../../../../lib/store";
-
-const DATA_DIR = process.cwd();
-const CREDENTIALS_PATH = `${DATA_DIR}/data/clawbot-credentials.json`;
-
-import fs from "node:fs";
-import path from "node:path";
+import {
+  addOrUpdateUser,
+  writeUserCredentials,
+  writeUserSettings,
+} from "../../../../lib/multi-user-store";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token, accountId, userId, baseUrl } = body;
+    const { token, accountId, userId, baseUrl, userName } = body;
     
     if (!token || !userId) {
       return NextResponse.json(
@@ -29,16 +27,21 @@ export async function POST(request: NextRequest) {
       userId,
     };
     
-    const dataDir = path.join(process.cwd(), "data");
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    
-    fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials, null, 2), "utf-8");
+    addOrUpdateUser(userId, userName || `用户_${userId.substring(0, 6)}`);
+    writeUserCredentials(userId, credentials);
+    writeUserSettings(userId, {
+      enabled: true,
+      startHour: 8,
+      endHour: 22,
+      intervalMinutes: 60,
+      dailyGoalCups: 8,
+      cupVolumeMl: 250,
+    });
     
     return NextResponse.json({
       success: true,
       message: "凭证已保存",
+      userId,
     });
   } catch (error) {
     return NextResponse.json(

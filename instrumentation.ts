@@ -1,7 +1,7 @@
-import { startScheduler } from "./lib/scheduler";
+import { startMultiUserScheduler } from "./lib/multi-user-scheduler";
 
 export function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    startScheduler();
+    startMultiUserScheduler();
   }
 }
