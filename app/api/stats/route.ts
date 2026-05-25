@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readSettings, getTodayRecord, getConsecutiveDays } from "../../lib/store";
+import { readSettings, getTodayRecord, getConsecutiveDays } from "../../../lib/store";
 
 export async function GET() {
   const settings = readSettings();

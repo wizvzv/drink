@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addDrinkRecord, readSettings } from "../../lib/store";
+import { addDrinkRecord, readSettings } from "../../../lib/store";
 
 export async function POST(request: NextRequest) {
   try {
