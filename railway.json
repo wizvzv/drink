@@ -8,6 +8,12 @@
     "startCommand": "npm run start",
     "healthcheckPath": "/",
     "healthcheckTimeout": 60,
-    "restartPolicyType": "ALWAYS"
+    "restartPolicyType": "ALWAYS",
+    "volumes": [
+      {
+        "mountPath": "/app/data",
+        "size": 1024
+      }
+    ]
   }
 }
