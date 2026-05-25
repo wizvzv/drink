@@ -51,20 +51,36 @@ export async function sendReminderToUser(userId: string): Promise<SendResult> {
     return { success: false, error: "发送太频繁，请稍后再试 (ret=-2)" };
   }
 
-  const c = getClient(userId);
-  if (!c) {
-    return { success: false, error: "用户凭证未设置" };
-  }
+  // 优先使用用户凭证，没有则回退到环境变量
+  let token = process.env.WXCLAW_TOKEN || "";
+  let baseUrl = process.env.WXCLAW_BASE_URL || "https://ilinkai.weixin.qq.com";
+  let toUser = process.env.WXCLAW_TO_USER || "";
 
   const credentials = readUserCredentials(userId);
-  if (!credentials) {
-    return { success: false, error: "用户凭证不存在" };
+  if (credentials) {
+    token = credentials.WXCLAW_TOKEN;
+    baseUrl = credentials.WXCLAW_BASE_URL;
+    toUser = credentials.WXCLAW_TO_USER;
   }
 
-  const toUser = credentials.WXCLAW_TO_USER;
-  if (!toUser) {
-    return { success: false, error: "WXCLAW_TO_USER 未设置" };
+  if (!token) {
+    return { success: false, error: "未配置 ClawBot 凭证，请在 Railway 设置 WXCLAW_TOKEN 环境变量或扫码登录" };
   }
+
+  if (!toUser) {
+    return { success: false, error: "未配置 WXCLAW_TO_USER" };
+  }
+
+  // 复用或创建 client
+  if (!clientsCache[userId] && token) {
+    const botId = token.split("@")[0];
+    clientsCache[userId] = new WxClawClient({
+      baseUrl,
+      token,
+      botId,
+    });
+  }
+  const c = clientsCache[userId];
 
   const settings = readUserSettings(userId);
   const todayRecord = getUserTodayRecord(userId);
