@@ -239,12 +239,29 @@ export default function LoginPage() {
             </div>
 
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              {qrcodeImg && (
+              {qrcodeImg ? (
                 <img
-                  src={qrcodeImg}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrcodeImg)}`}
                   alt="登录二维码"
                   className="w-full max-w-[240px] mx-auto rounded-lg border border-gray-200"
+                  onError={(e) => {
+                    // 备用：直接显示链接，用户可以复制后手动打开
+                    (e.target as HTMLImageElement).style.display = "none";
+                    const parent = (e.target as HTMLImageElement).parentElement;
+                    if (parent) {
+                      const fallback = document.createElement("div");
+                      fallback.className = "text-center py-6";
+                      fallback.innerHTML = `
+                        <div class="text-lg mb-2">📱</div>
+                        <p class="text-sm text-gray-600 mb-3">二维码加载失败</p>
+                        <a href="${qrcodeImg}" target="_blank" class="text-blue-500 text-sm underline break-all">点击此链接扫码登录</a>
+                      `;
+                      parent.appendChild(fallback);
+                    }
+                  }}
                 />
+              ) : (
+                <div className="text-center py-6 text-gray-400 text-sm">加载二维码中...</div>
               )}
             </div>
 
